@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- App Sandbox on from day one (FR-1.2, §7). -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<!-- READ-ONLY access to user-selected folders: the enforcement backstop
+	     for the non-destructive guarantee. Any write attempt to a watched
+	     folder fails at the OS level. -->
+	<key>com.apple.security.files.user-selected.read-only</key>
+	<true/>
+	<!-- Security-scoped bookmarks so folder access persists across launches. -->
+	<key>com.apple.security.files.bookmarks.app-scope</key>
+	<true/>
+	<!-- Outbound network only for the opt-in AI tagging endpoint (P1). -->
+	<key>com.apple.security.network.client</key>
+	<true/>
+</dict>
+</plist>
