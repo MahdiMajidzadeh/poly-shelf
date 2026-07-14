@@ -42,16 +42,22 @@ public enum FormatRegistry {
     public static let all: [FormatSpec] = [
         // Print mesh — full 3D render, on by default
         FormatSpec("stl", .printMesh, .meshRender, defaultEnabled: true, interactive3D: true),
-        FormatSpec("3mf", .printMesh, .meshRender, defaultEnabled: true, interactive3D: true),
+        // 3MF: ModelIO can't load its geometry; slicer 3MFs carry a package
+        // thumbnail (extracted by ThreeMFParser), so that's the primary tier.
+        FormatSpec("3mf", .printMesh, .embeddedThumbnail, defaultEnabled: true),
         FormatSpec("obj", .printMesh, .meshRender, defaultEnabled: true, interactive3D: true),
         FormatSpec("ply", .printMesh, .meshRender, defaultEnabled: true, interactive3D: true),
-        FormatSpec("amf", .printMesh, .meshRender, defaultEnabled: true),
+        // AMF: ModelIO/SceneKit can't load it — icon tier in v1 (deviation
+        // from the PRD's "full 3D render"; needs a custom parser later).
+        FormatSpec("amf", .printMesh, .icon, defaultEnabled: true),
 
         // Universal/DCC
         FormatSpec("usdz", .universal, .quickLook, defaultEnabled: true, interactive3D: true),
         FormatSpec("usd", .universal, .quickLook, defaultEnabled: false, interactive3D: true),
-        FormatSpec("gltf", .universal, .meshRender, defaultEnabled: true),
-        FormatSpec("glb", .universal, .meshRender, defaultEnabled: true),
+        // glTF: neither ModelIO nor SceneKit loads it natively — QuickLook
+        // tier (renders only if a QL plugin is installed), else icon.
+        FormatSpec("gltf", .universal, .quickLook, defaultEnabled: true),
+        FormatSpec("glb", .universal, .quickLook, defaultEnabled: true),
         FormatSpec("fbx", .universal, .quickLook, defaultEnabled: false),
         FormatSpec("dae", .universal, .quickLook, defaultEnabled: false),
         FormatSpec("abc", .universal, .meshRender, defaultEnabled: false, interactive3D: true),
