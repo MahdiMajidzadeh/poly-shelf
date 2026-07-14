@@ -41,6 +41,7 @@ public final class DatabaseManager: Sendable {
                 t.column("pathHint", .text).notNull()
                 t.column("addedAt", .datetime).notNull()
                 t.column("settingsJson", .text)
+                t.column("detachedAt", .datetime)
             }
 
             try db.create(table: "items") { t in
@@ -55,6 +56,7 @@ public final class DatabaseManager: Sendable {
                 t.column("createdAt", .datetime)
                 t.column("modifiedAt", .datetime)
                 t.column("xxhash64", .integer)
+                t.column("inode", .integer)
                 t.column("sha256", .text)
                 t.column("status", .text).notNull().defaults(to: ItemStatus.ok.rawValue)
                 t.column("missingSince", .datetime)
@@ -65,6 +67,7 @@ public final class DatabaseManager: Sendable {
                 t.column("partCount", .integer)
                 t.column("notes", .text)
                 t.column("aiDescription", .text)
+                t.column("aiSuggestedName", .text)
                 t.column("indexedAt", .datetime).notNull()
                 t.uniqueKey(["folderId", "relPath"])
             }
@@ -86,6 +89,13 @@ public final class DatabaseManager: Sendable {
                 t.column("provenance", .text).notNull()
                 t.column("suppressed", .boolean).notNull().defaults(to: false)
                 t.primaryKey(["itemId", "tagId"])
+            }
+
+            try db.create(table: "saved_searches") { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("name", .text).notNull()
+                t.column("queryJson", .text).notNull()
+                t.column("createdAt", .datetime).notNull()
             }
 
             // Standalone FTS5 table, rowid == items.id. Kept in sync manually

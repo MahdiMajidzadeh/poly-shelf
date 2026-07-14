@@ -27,14 +27,19 @@ public struct FolderRecord: Codable, Identifiable, Equatable, Sendable, Fetchabl
     public var pathHint: String
     public var addedAt: Date
     public var settingsJson: String?
+    /// Set when the user removes the folder but chooses to keep metadata
+    /// (FR-1.3). Detached folders are hidden everywhere; re-adding the same
+    /// content re-attaches by hash.
+    public var detachedAt: Date?
 
-    public init(id: Int64? = nil, bookmarkData: Data, displayName: String, pathHint: String, addedAt: Date = Date(), settingsJson: String? = nil) {
+    public init(id: Int64? = nil, bookmarkData: Data, displayName: String, pathHint: String, addedAt: Date = Date(), settingsJson: String? = nil, detachedAt: Date? = nil) {
         self.id = id
         self.bookmarkData = bookmarkData
         self.displayName = displayName
         self.pathHint = pathHint
         self.addedAt = addedAt
         self.settingsJson = settingsJson
+        self.detachedAt = detachedAt
     }
 
     public mutating func didInsert(_ inserted: InsertionSuccess) {
@@ -59,6 +64,8 @@ public struct ItemRecord: Codable, Identifiable, Equatable, Sendable, FetchableR
     public var modifiedAt: Date?
     /// xxHash64 stored as Int64 bit pattern (eager, for change detection).
     public var xxhash64: Int64?
+    /// File inode — survives on-disk renames, used for rename matching (FR-2.4).
+    public var inode: Int64?
     /// SHA-256 hex, computed lazily (dedupe, export identity).
     public var sha256: String?
     public var status: ItemStatus
@@ -72,6 +79,8 @@ public struct ItemRecord: Codable, Identifiable, Equatable, Sendable, FetchableR
     public var notes: String?
     /// AI-generated description (P1), provenance-tracked separately from notes.
     public var aiDescription: String?
+    /// AI-suggested display name — offered in the UI, never applied silently (FR-5.9).
+    public var aiSuggestedName: String?
     public var indexedAt: Date
 
     public init(
@@ -85,6 +94,7 @@ public struct ItemRecord: Codable, Identifiable, Equatable, Sendable, FetchableR
         createdAt: Date? = nil,
         modifiedAt: Date? = nil,
         xxhash64: Int64? = nil,
+        inode: Int64? = nil,
         sha256: String? = nil,
         status: ItemStatus = .ok,
         missingSince: Date? = nil,
@@ -95,6 +105,7 @@ public struct ItemRecord: Codable, Identifiable, Equatable, Sendable, FetchableR
         partCount: Int64? = nil,
         notes: String? = nil,
         aiDescription: String? = nil,
+        aiSuggestedName: String? = nil,
         indexedAt: Date = Date()
     ) {
         self.id = id
@@ -107,6 +118,7 @@ public struct ItemRecord: Codable, Identifiable, Equatable, Sendable, FetchableR
         self.createdAt = createdAt
         self.modifiedAt = modifiedAt
         self.xxhash64 = xxhash64
+        self.inode = inode
         self.sha256 = sha256
         self.status = status
         self.missingSince = missingSince
@@ -117,6 +129,7 @@ public struct ItemRecord: Codable, Identifiable, Equatable, Sendable, FetchableR
         self.partCount = partCount
         self.notes = notes
         self.aiDescription = aiDescription
+        self.aiSuggestedName = aiSuggestedName
         self.indexedAt = indexedAt
     }
 
