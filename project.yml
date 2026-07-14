@@ -1,0 +1,37 @@
+name: PolyShelf
+options:
+  bundleIdPrefix: com.mahdimajidzadeh
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+
+packages:
+  PolyShelfCore:
+    path: PolyShelfCore
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MARKETING_VERSION: 0.1.0
+    CURRENT_PROJECT_VERSION: 1
+
+targets:
+  PolyShelf:
+    type: application
+    platform: macOS
+    sources:
+      - path: PolyShelf
+    dependencies:
+      - package: PolyShelfCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mahdimajidzadeh.polyshelf
+        CODE_SIGN_ENTITLEMENTS: PolyShelf/Support/PolyShelf.entitlements
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_HARDENED_RUNTIME: YES
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.graphics-design
+        INFOPLIST_KEY_NSHumanReadableCopyright: ""
+        INFOPLIST_KEY_NSPrincipalClass: NSApplication
+        COMBINE_HIDPI_IMAGES: YES

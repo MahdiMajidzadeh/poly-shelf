@@ -1,0 +1,15 @@
+# XcodeGen output — regenerate with `xcodegen generate`
+*.xcodeproj
+
+# Xcode / SwiftPM
+.build/
+DerivedData/
+*.xcresult
+xcuserdata/
+.swiftpm/
+
+# SwiftPM-assembled app bundle (scripts/build-app.sh)
+dist/
+
+# macOS
+.DS_Store
