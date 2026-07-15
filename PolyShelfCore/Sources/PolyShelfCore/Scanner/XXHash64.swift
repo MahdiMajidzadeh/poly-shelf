@@ -98,17 +98,27 @@ public enum XXHash64 {
 
         public mutating func update(_ data: Data) {
             totalLength += UInt64(data.count)
+            // Fast path: nothing buffered → consume whole 32-byte stripes
+            // straight from the input, only buffering the tail. Avoids
+            // copying every chunk through `buffer` (hashFile reads 1 MB
+            // chunks, so this is the steady-state path).
+            if buffer.isEmpty {
+                let usable = data.count - (data.count % 32)
+                if usable > 0 {
+                    data.withUnsafeBytes { (raw: UnsafeRawBufferPointer) in
+                        (v1, v2, v3, v4) = XXHash64.consumeStripes(raw, upTo: usable, state: (v1, v2, v3, v4))
+                    }
+                }
+                if usable < data.count {
+                    buffer.append(data.dropFirst(usable))
+                }
+                return
+            }
             buffer.append(data)
             guard buffer.count >= 32 else { return }
             let usable = buffer.count - (buffer.count % 32)
             buffer.withUnsafeBytes { (raw: UnsafeRawBufferPointer) in
-                var offset = 0
-                while offset < usable {
-                    v1 = XXHash64.round(v1, XXHash64.read64(raw, offset)); offset += 8
-                    v2 = XXHash64.round(v2, XXHash64.read64(raw, offset)); offset += 8
-                    v3 = XXHash64.round(v3, XXHash64.read64(raw, offset)); offset += 8
-                    v4 = XXHash64.round(v4, XXHash64.read64(raw, offset)); offset += 8
-                }
+                (v1, v2, v3, v4) = XXHash64.consumeStripes(raw, upTo: usable, state: (v1, v2, v3, v4))
             }
             buffer.removeFirst(usable)
         }
@@ -156,6 +166,22 @@ public enum XXHash64 {
     }
 
     // MARK: - Helpers
+
+    private static func consumeStripes(
+        _ raw: UnsafeRawBufferPointer,
+        upTo usable: Int,
+        state: (UInt64, UInt64, UInt64, UInt64)
+    ) -> (UInt64, UInt64, UInt64, UInt64) {
+        var (v1, v2, v3, v4) = state
+        var offset = 0
+        while offset < usable {
+            v1 = round(v1, read64(raw, offset)); offset += 8
+            v2 = round(v2, read64(raw, offset)); offset += 8
+            v3 = round(v3, read64(raw, offset)); offset += 8
+            v4 = round(v4, read64(raw, offset)); offset += 8
+        }
+        return (v1, v2, v3, v4)
+    }
 
     private static func rotl(_ x: UInt64, _ r: UInt64) -> UInt64 {
         (x << r) | (x >> (64 - r))

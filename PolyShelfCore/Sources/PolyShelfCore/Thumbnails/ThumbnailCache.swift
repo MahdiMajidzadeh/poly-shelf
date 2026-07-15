@@ -6,13 +6,17 @@ import UniformTypeIdentifiers
 /// Disk cache of 512×512 PNG thumbnails in Application Support, keyed by
 /// content hash (FR-4.1) — a re-downloaded identical file reuses its
 /// thumbnail. LRU-evicted above a size cap (default 2 GB, §10 Q2).
-public final class ThumbnailCache: Sendable {
+public final class ThumbnailCache: @unchecked Sendable {
     public let directory: URL
     private let maxBytes: Int64
+    /// Hot-path memory layer so grid cells recycled during scroll don't
+    /// re-read PNGs from disk. NSCache is thread-safe and evicts under pressure.
+    private let memoryCache = NSCache<NSString, NSData>()
 
     public init(directory: URL, maxBytes: Int64 = 2 * 1024 * 1024 * 1024) throws {
         self.directory = directory
         self.maxBytes = maxBytes
+        memoryCache.totalCostLimit = 64 * 1024 * 1024
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
     }
 
@@ -44,7 +48,12 @@ public final class ThumbnailCache: Sendable {
     }
 
     public func data(forKey key: String) -> Data? {
-        try? Data(contentsOf: fileURL(forKey: key))
+        if let cached = memoryCache.object(forKey: key as NSString) {
+            return cached as Data
+        }
+        guard let data = try? Data(contentsOf: fileURL(forKey: key)) else { return nil }
+        memoryCache.setObject(data as NSData, forKey: key as NSString, cost: data.count)
+        return data
     }
 
     /// Stores PNG data; any ImageIO-decodable input (BMP from .gx, arbitrary
@@ -52,6 +61,7 @@ public final class ThumbnailCache: Sendable {
     public func store(imageData: Data, forKey key: String) {
         guard let normalized = Self.normalizedPNG(from: imageData, maxPixel: 512) else { return }
         try? normalized.write(to: fileURL(forKey: key), options: .atomic)
+        memoryCache.setObject(normalized as NSData, forKey: key as NSString, cost: normalized.count)
         pruneIfNeeded()
     }
 

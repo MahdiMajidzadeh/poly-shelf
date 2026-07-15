@@ -139,7 +139,7 @@ public final class LibraryScanner: Sendable {
             let inode = Self.inode(of: filePath)
 
             if var row = existing[relPath] {
-                let contentUnchanged = row.sizeBytes == size && row.modifiedAt == modified
+                let contentUnchanged = row.sizeBytes == size && Self.datesMatch(row.modifiedAt, modified)
                 if contentUnchanged && row.status == .ok {
                     summary.unchanged += 1
                     continue
@@ -286,6 +286,16 @@ public final class LibraryScanner: Sendable {
             }
             try DatabaseManager.refreshFTS(db, itemIds: ids)
             return ids
+        }
+    }
+
+    /// SQLite stores dates at millisecond precision while APFS mtimes carry
+    /// nanoseconds — exact equality would re-hash every file on every scan.
+    static func datesMatch(_ a: Date?, _ b: Date?) -> Bool {
+        switch (a, b) {
+        case (nil, nil): return true
+        case let (a?, b?): return abs(a.timeIntervalSince(b)) < 0.002
+        default: return false
         }
     }
 

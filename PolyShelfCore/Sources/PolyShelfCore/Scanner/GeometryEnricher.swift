@@ -40,36 +40,64 @@ public final class GeometryEnricher: ScanEnrichmentStage, Sendable {
 
     /// Parses the given items (ids of rows just added/updated by the scanner).
     /// `rootURL` must be inside an active security scope.
+    /// Results are written in batches: one transaction per item means one WAL
+    /// commit — and one full UI observation refetch — per parsed file.
     public func enrich(itemIds: [Int64], rootURL: URL) async {
         guard !itemIds.isEmpty else { return }
         let items: [ItemRecord] = (try? await database.writer.read { db in
             try ItemRecord.filter(itemIds.contains(Column("id"))).fetchAll(db)
         }) ?? []
 
-        await withTaskGroup(of: Void.self) { group in
+        var statUpdates: [(id: Int64, stats: GeometryStats)] = []
+        var unreadableIds: [Int64] = []
+        let flushThreshold = 50
+
+        await withTaskGroup(of: (Int64, GeometryStats?).self) { group in
             var active = 0
             for item in items {
-                guard Self.parserByExt[item.ext] != nil else { continue }
-                if active >= maxConcurrent {
-                    await group.next()
+                guard Self.parserByExt[item.ext] != nil, let itemId = item.id else { continue }
+                if active >= maxConcurrent, let (id, stats) = await group.next() {
                     active -= 1
+                    if let stats { statUpdates.append((id, stats)) } else { unreadableIds.append(id) }
+                    if statUpdates.count + unreadableIds.count >= flushThreshold {
+                        await flush(stats: statUpdates, unreadable: unreadableIds)
+                        statUpdates.removeAll()
+                        unreadableIds.removeAll()
+                    }
                 }
                 active += 1
                 group.addTask { [self] in
-                    await enrichOne(item, rootURL: rootURL)
+                    (itemId, parseOne(item, rootURL: rootURL))
                 }
             }
-            await group.waitForAll()
+            for await (id, stats) in group {
+                if let stats { statUpdates.append((id, stats)) } else { unreadableIds.append(id) }
+            }
+        }
+        await flush(stats: statUpdates, unreadable: unreadableIds)
+    }
+
+    /// Parses one file; embedded thumbnails go straight to the sink (no DB).
+    /// Returns nil for corrupt input (caller marks the item unreadable).
+    private func parseOne(_ item: ItemRecord, rootURL: URL) -> GeometryStats? {
+        guard let parser = Self.parserByExt[item.ext], let itemId = item.id else { return nil }
+        let fileURL = rootURL.appendingPathComponent(item.relPath)
+        do {
+            let stats = try parser.parse(fileURL: fileURL) // ParseError on corrupt input
+            if let thumbnail = stats.embeddedThumbnail {
+                thumbnailSink?(itemId, thumbnail)
+            }
+            return stats
+        } catch {
+            NSLog("PolyShelf: unreadable %@ — %@", item.relPath, String(describing: error))
+            return nil
         }
     }
 
-    private func enrichOne(_ item: ItemRecord, rootURL: URL) async {
-        guard let parser = Self.parserByExt[item.ext], let itemId = item.id else { return }
-        let fileURL = rootURL.appendingPathComponent(item.relPath)
-
-        do {
-            let stats = try parser.parse(fileURL: fileURL) // ParseError on corrupt input
-            try? await database.writer.write { db in
+    private func flush(stats: [(id: Int64, stats: GeometryStats)], unreadable: [Int64]) async {
+        guard !stats.isEmpty || !unreadable.isEmpty else { return }
+        try? await database.writer.write { db in
+            for (itemId, stats) in stats {
                 try db.execute(
                     sql: """
                         UPDATE items
@@ -79,12 +107,7 @@ public final class GeometryEnricher: ScanEnrichmentStage, Sendable {
                     arguments: [stats.bboxX, stats.bboxY, stats.bboxZ, stats.triangleCount, stats.partCount, itemId]
                 )
             }
-            if let thumbnail = stats.embeddedThumbnail {
-                thumbnailSink?(itemId, thumbnail)
-            }
-        } catch {
-            NSLog("PolyShelf: unreadable %@ — %@", item.relPath, String(describing: error))
-            try? await database.writer.write { db in
+            for itemId in unreadable {
                 try db.execute(
                     sql: "UPDATE items SET status = ? WHERE id = ?",
                     arguments: [ItemStatus.unreadable.rawValue, itemId]

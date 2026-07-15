@@ -247,8 +247,14 @@ struct SidebarView: View {
             try TagStore.tagCountsRequest(db, enabledExtensions: enabled)
         }
         do {
-            for try await counts in observation.values(in: env.database.writer) {
+            // Conflate + pace: this aggregate query re-runs on every item/tag
+            // write, which is constant churn during a scan.
+            for try await counts in observation.values(
+                in: env.database.writer, bufferingPolicy: .bufferingNewest(1)
+            ) {
                 tagCounts = counts
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                if Task.isCancelled { break }
             }
         } catch {}
     }

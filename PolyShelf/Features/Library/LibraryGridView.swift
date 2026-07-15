@@ -16,6 +16,10 @@ struct LibraryGridView: View {
     @State private var filterTagIds: Set<Int64> = []
     @State private var filterFormats: Set<String> = []
     @State private var addedWithinDays: Int? = nil
+    /// Cutoff computed once when the filter is chosen — putting `Date()` math
+    /// in `query` would give it a new value every render, and `.task(id: query)`
+    /// would tear down and restart the DB observation each time.
+    @State private var addedAfterCutoff: Date? = nil
     @State private var allTags: [TagCount] = []
 
     private let columns = [GridItem(.adaptive(minimum: 160, maximum: 220), spacing: 16)]
@@ -45,9 +49,7 @@ struct LibraryGridView: View {
         let enabled = env.libraryModel.enabledExtensions
         q.formats = filterFormats.isEmpty ? enabled : enabled.intersection(filterFormats)
         q.requiredTagIds = Array(filterTagIds).sorted()
-        if let days = addedWithinDays {
-            q.addedAfter = Calendar.current.date(byAdding: .day, value: -days, to: Date())
-        }
+        q.addedAfter = addedAfterCutoff
         q.sort = sort
         q.sortDescending = sortDescending
         return q
@@ -184,10 +186,10 @@ struct LibraryGridView: View {
             .fixedSize()
 
             Menu {
-                Button("Any Time") { addedWithinDays = nil }
-                Button("Last 24 Hours") { addedWithinDays = 1 }
-                Button("Last Week") { addedWithinDays = 7 }
-                Button("Last Month") { addedWithinDays = 30 }
+                Button("Any Time") { setAddedFilter(days: nil) }
+                Button("Last 24 Hours") { setAddedFilter(days: 1) }
+                Button("Last Week") { setAddedFilter(days: 7) }
+                Button("Last Month") { setAddedFilter(days: 30) }
             } label: {
                 Label(dateFilterLabel, systemImage: "calendar")
             }
@@ -198,6 +200,13 @@ struct LibraryGridView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 6)
+    }
+
+    private func setAddedFilter(days: Int?) {
+        addedWithinDays = days
+        addedAfterCutoff = days.flatMap {
+            Calendar.current.date(byAdding: .day, value: -$0, to: Date())
+        }
     }
 
     private var dateFilterLabel: String {
@@ -241,9 +250,17 @@ struct LibraryGridView: View {
             return (items, tags)
         }
         do {
-            for try await (items, tags) in observation.values(in: env.database.writer) {
+            // bufferingNewest(1): a scan commits every ~50–100 files, and each
+            // commit produces a full refetch — keep only the latest snapshot
+            // instead of replaying a backlog. The sleep paces grid rebuilds
+            // (≤5/s); conflation means the final state is never dropped.
+            for try await (items, tags) in observation.values(
+                in: env.database.writer, bufferingPolicy: .bufferingNewest(1)
+            ) {
                 self.items = items
                 self.allTags = tags
+                try? await Task.sleep(nanoseconds: 200_000_000)
+                if Task.isCancelled { break }
             }
         } catch {
             // DB unusable — surfaced at launch.

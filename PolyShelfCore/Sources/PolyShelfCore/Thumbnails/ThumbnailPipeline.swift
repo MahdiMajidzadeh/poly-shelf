@@ -26,6 +26,9 @@ public actor ThumbnailPipeline {
     private var enqueued: Set<Int64> = []
     private var workersRunning = 0
     private var largeFileBusy = false
+    /// Folder security scopes held open while the queue drains — resolving a
+    /// security-scoped bookmark per item is far too expensive at queue scale.
+    private var folderRoots: [Int64: URL] = [:]
 
     public init(database: DatabaseManager, folderManager: FolderManager, cache: ThumbnailCache) {
         self.database = database
@@ -85,6 +88,27 @@ public actor ThumbnailPipeline {
             enqueued.remove(itemId)
         }
         workersRunning -= 1
+        if workersRunning == 0 { releaseFolderRoots() }
+    }
+
+    /// Resolves (once) and caches security-scoped access for a folder.
+    private func rootURL(forFolderId folderId: Int64) async -> URL? {
+        if let cached = folderRoots[folderId] { return cached }
+        guard let folder = try? await database.writer.read({ try FolderRecord.fetchOne($0, key: folderId) }),
+              case .available(let url) = folderManager.beginAccess(folder) else { return nil }
+        // Another worker may have resolved the same folder during the await
+        // (actor reentrancy) — keep the first scope, release this one.
+        if let cached = folderRoots[folderId] {
+            url.stopAccessingSecurityScopedResource()
+            return cached
+        }
+        folderRoots[folderId] = url
+        return url
+    }
+
+    private func releaseFolderRoots() {
+        for url in folderRoots.values { url.stopAccessingSecurityScopedResource() }
+        folderRoots.removeAll()
     }
 
     private func nextItem() -> Int64? {
@@ -102,11 +126,7 @@ public actor ThumbnailPipeline {
         guard let spec = FormatRegistry.spec(forExtension: item.ext), spec.previewTier != .icon else {
             return
         }
-        guard let folder = try? await database.writer.read({ try FolderRecord.fetchOne($0, key: item.folderId) }) else {
-            return
-        }
-        guard case .available(let rootURL) = folderManager.beginAccess(folder) else { return }
-        defer { rootURL.stopAccessingSecurityScopedResource() }
+        guard let rootURL = await rootURL(forFolderId: item.folderId) else { return }
         let fileURL = rootURL.appendingPathComponent(item.relPath)
 
         // One oversized render at a time.

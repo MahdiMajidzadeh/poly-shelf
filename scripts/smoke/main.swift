@@ -190,11 +190,14 @@ Task {
         at: root.appendingPathComponent("benchy_boat.stl"),
         to: root.appendingPathComponent("renamed_boat.stl")
     )
-    _ = try await scanner.scan(folderId: folderId, enabledExtensions: enabled)
+    let rescan = try await scanner.scan(folderId: folderId, enabledExtensions: enabled)
     let renamedItem = try await database.writer.read { db in
         try ItemRecord.fetchAll(db).first { $0.originalName == "renamed_boat.stl" }
     }
     check(renamedItem?.id == byName["benchy_boat.stl"]?.id, "on-disk rename keeps the same item")
+    // Incremental guarantee: untouched files must be skipped, not re-hashed.
+    // (Regression check: exact Date equality broke on SQLite's ms precision.)
+    check(rescan.unchanged >= 3, "rescan skips unchanged files", detail: "got \(rescan)")
 
     // Duplicates
     let groups = try await DuplicateFinder(database: database, folderManager: folderManager).findDuplicates()
