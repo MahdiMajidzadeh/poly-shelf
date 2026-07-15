@@ -15,18 +15,17 @@ struct DuplicatesView: View {
                 ProgressView("Comparing file contents…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if groups.isEmpty {
-                ContentUnavailableView(
-                    scanned ? "No Duplicates" : "Find Duplicates",
-                    systemImage: "doc.on.doc",
-                    description: Text(scanned
+                ContentUnavailableView {
+                    Label(scanned ? "No Duplicates" : "Find Duplicates",
+                          systemImage: "doc.on.doc")
+                } description: {
+                    Text(scanned
                         ? "No content-identical files in your library."
                         : "Compare all files by content hash to find identical models stored in different places.")
-                )
-                .overlay(alignment: .bottom) {
+                } actions: {
                     if !scanned {
                         Button("Scan for Duplicates") { scan() }
                             .buttonStyle(.borderedProminent)
-                            .padding(.bottom, 60)
                     }
                 }
             } else {

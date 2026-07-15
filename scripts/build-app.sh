@@ -18,6 +18,8 @@ cp "$BUILD_DIR/PolyShelf" "$APP/Contents/MacOS/PolyShelf"
 # SwiftPM resource bundles (tag dictionary etc.) — Bundle.module finds them
 # in Contents/Resources of the main bundle. -L: $BUILD_DIR is a symlink.
 find -L "$BUILD_DIR" -maxdepth 1 -name '*.bundle' -exec cp -R {} "$APP/Contents/Resources/" \;
+# App icon — CFBundleIconFile (below) resolves AppIcon.icns in Contents/Resources.
+cp PolyShelf/Support/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -26,6 +28,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <dict>
 	<key>CFBundleExecutable</key>
 	<string>PolyShelf</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.mahdimajidzadeh.polyshelf</string>
 	<key>CFBundleName</key>
