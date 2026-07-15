@@ -3,6 +3,7 @@ import PolyShelfCore
 
 @main
 struct PolyShelfApp: App {
+    @Environment(\.openWindow) private var openWindow
     @State private var environment: AppEnvironment
 
     init() {
@@ -20,6 +21,11 @@ struct PolyShelfApp: App {
         }
         .windowStyle(.automatic)
         .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button("About Poly Shelf") {
+                    openWindow(id: "about")
+                }
+            }
             CommandGroup(after: .importExport) {
                 Button("Import Metadata…") {
                     environment.libraryModel.importMetadata()
@@ -34,5 +40,11 @@ struct PolyShelfApp: App {
             SettingsView()
                 .environment(environment)
         }
+
+        Window("About Poly Shelf", id: "about") {
+            AboutView()
+        }
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
     }
 }
