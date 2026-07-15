@@ -82,8 +82,6 @@ is a bug.
 
 ## Running from source
 
-See [requirement-poly-shelf.md](requirement-poly-shelf.md) for the full PRD.
-
 ### With Xcode (primary path)
 
 Requirements: **Xcode 15+** (macOS 14 SDK), [XcodeGen](https://github.com/yonaskolb/XcodeGen)
