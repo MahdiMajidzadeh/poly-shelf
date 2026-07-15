@@ -5,6 +5,9 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 CONFIG="${1:-release}"
+# Override the bundle version via env (CI passes the git tag). Patched into the
+# built Info.plist before codesign so the signature stays valid.
+VERSION="${MARKETING_VERSION:-0.1.0}"
 
 echo "▸ swift build -c $CONFIG"
 swift build -c "$CONFIG"
@@ -53,6 +56,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 </dict>
 </plist>
 PLIST
+
+/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP/Contents/Info.plist"
 
 echo "▸ codesign (ad-hoc, sandboxed)"
 codesign --force --sign - \

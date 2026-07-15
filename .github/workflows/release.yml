@@ -1,0 +1,42 @@
+name: Release
+
+# Build PolyShelf.app and publish a GitHub Release for every pushed tag.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: swift --version
+
+      - name: Build PolyShelf.app
+        env:
+          # Tag "v1.2.3" -> "1.2.3"; falls back to the raw ref name otherwise.
+          MARKETING_VERSION: ${{ github.ref_name }}
+        run: |
+          export MARKETING_VERSION="${MARKETING_VERSION#v}"
+          scripts/build-app.sh release
+
+      - name: Package .app
+        run: |
+          # ditto preserves the bundle layout, symlinks, and codesign metadata.
+          ditto -c -k --sequesterRsrc --keepParent dist/PolyShelf.app "PolyShelf-${{ github.ref_name }}.zip"
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "PolyShelf ${{ github.ref_name }}" \
+            --generate-notes \
+            "PolyShelf-${{ github.ref_name }}.zip"
