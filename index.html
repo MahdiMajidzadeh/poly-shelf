@@ -94,35 +94,8 @@
   }
   .hero-shot { padding: 24px 0 0; }
 
-  /* Manifesto */
-  .manifesto { padding: 140px 0 120px; }
-  .manifesto .lead {
-    font-family: var(--serif);
-    font-size: clamp(1.55rem, 3.4vw, 2.15rem);
-    line-height: 1.42;
-    font-weight: 400;
-    letter-spacing: -0.008em;
-  }
-  .manifesto .lead .dim { color: var(--faint); }
-  .manifesto .body { margin-top: 44px; color: var(--muted); max-width: 36em; }
-  .manifesto .body + .body { margin-top: 20px; }
-  .manifesto .body strong { color: var(--text); font-weight: 600; }
-  .entitlement {
-    margin-top: 44px;
-    font-family: var(--mono);
-    font-size: .84rem;
-    background: var(--code-bg);
-    border-radius: 10px;
-    padding: 18px 22px;
-    color: var(--muted);
-    overflow-x: auto;
-    white-space: pre;
-    line-height: 1.9;
-  }
-  .entitlement b { color: var(--text); font-weight: 600; }
-
   /* Fact list */
-  .facts { padding: 0 0 60px; }
+  .facts { padding: 140px 0 60px; }
   .facts h2, .know h2 {
     font-size: .84rem;
     font-weight: 600;
@@ -210,28 +183,6 @@
   </figure>
   <figcaption>1,641 models across two drives — still exactly where they were.</figcaption>
 </div>
-
-<section class="manifesto">
-  <div class="col">
-    <p class="lead">
-      Every library app wants to own your files. Import them, copy them,
-      rename them, tuck them into its own little database.
-      <span class="dim">Poly Shelf can’t. Not won’t — can’t.</span>
-    </p>
-    <p class="body">
-      The app ships with Apple’s read-only sandbox entitlement, so a write to
-      any folder you add is <strong>refused by macOS itself</strong>. There is no
-      import step, no managed library, no “where did my file go.” Your folder
-      structure stays yours; if you delete the app tomorrow, nothing changes.
-    </p>
-    <p class="body">
-      That constraint isn’t a setting — it’s baked into the app’s signature,
-      and any code path that could write to your files is treated as a bug:
-    </p>
-    <div class="entitlement"><span>&lt;key&gt;</span><b>com.apple.security.files.user-selected.read-only</b><span>&lt;/key&gt;</span>
-<span>&lt;true/&gt;   &lt;!-- writes fail at the OS level --&gt;</span></div>
-  </div>
-</section>
 
 <section class="facts">
   <div class="col">
