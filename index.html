@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Poly Shelf — Your 3D model library, organized in place</title>
+<meta name="description" content="A native macOS app that indexes, previews, tags, and searches your existing folders of 3D model files — STL, 3MF, OBJ, STEP, GCODE and more — without ever moving, renaming, or modifying a file on disk.">
+<meta property="og:title" content="Poly Shelf — Your 3D model library, organized in place">
+<meta property="og:description" content="Index, preview, tag, and search your 3D model files on macOS — read-only by design. Your files never move.">
+<meta property="og:image" content="icon.png">
+<link rel="icon" type="image/png" href="icon.png">
+<style>
+  :root {
+    --bg: #0d1017;
+    --bg-soft: #131826;
+    --card: #171d2e;
+    --border: #262f47;
+    --text: #e8ecf5;
+    --muted: #9aa5bd;
+    --accent: #ffb454;
+    --accent-2: #59c2ff;
+    --radius: 16px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent-2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+
+  /* Nav */
+  nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 0;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.05rem; color: var(--text); }
+  .brand img { width: 36px; height: 36px; border-radius: 9px; }
+  .brand:hover { text-decoration: none; }
+  nav .links { display: flex; gap: 24px; align-items: center; font-size: .95rem; }
+  nav .links a { color: var(--muted); }
+  nav .links a:hover { color: var(--text); text-decoration: none; }
+
+  /* Hero */
+  header.hero {
+    text-align: center;
+    padding: 72px 0 88px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: "";
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(600px 300px at 50% 0%, rgba(89,194,255,.10), transparent 70%),
+      radial-gradient(500px 260px at 70% 20%, rgba(255,180,84,.07), transparent 70%);
+    pointer-events: none;
+  }
+  .hero img.appicon {
+    width: 148px; height: 148px;
+    filter: drop-shadow(0 18px 40px rgba(0,0,0,.5));
+    margin-bottom: 28px;
+  }
+  .hero h1 {
+    font-size: clamp(2.2rem, 5.5vw, 3.4rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.12;
+  }
+  .hero h1 .accent { color: var(--accent); }
+  .hero p.sub {
+    max-width: 640px;
+    margin: 20px auto 0;
+    color: var(--muted);
+    font-size: 1.15rem;
+  }
+  .hero p.sub strong { color: var(--text); font-weight: 600; }
+  .cta-row {
+    margin-top: 36px;
+    display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 13px 26px;
+    border-radius: 12px;
+    font-weight: 600; font-size: 1rem;
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .btn:hover { text-decoration: none; transform: translateY(-1px); }
+  .btn-primary {
+    background: linear-gradient(180deg, #ffc26e, #f59a2b);
+    color: #1a1205;
+    box-shadow: 0 8px 24px rgba(245,154,43,.28);
+  }
+  .btn-secondary {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .hero .req { margin-top: 16px; font-size: .85rem; color: var(--muted); }
+
+  .formats {
+    margin-top: 40px;
+    display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+  }
+  .formats span {
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+    font-size: .8rem;
+    color: var(--muted);
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    padding: 5px 12px;
+    border-radius: 999px;
+  }
+
+  /* Sections */
+  section { padding: 72px 0; }
+  section h2 {
+    font-size: clamp(1.6rem, 3.5vw, 2.1rem);
+    font-weight: 750;
+    letter-spacing: -0.015em;
+    text-align: center;
+  }
+  section p.lede {
+    max-width: 620px; margin: 14px auto 0;
+    text-align: center; color: var(--muted);
+  }
+
+  /* Feature grid */
+  .grid {
+    margin-top: 48px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 18px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 26px;
+  }
+  .card .icon {
+    width: 42px; height: 42px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 11px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    font-size: 1.25rem;
+    margin-bottom: 16px;
+  }
+  .card h3 { font-size: 1.05rem; font-weight: 650; margin-bottom: 8px; }
+  .card p { color: var(--muted); font-size: .93rem; }
+
+  /* Invariant band */
+  .invariant {
+    background: var(--bg-soft);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .invariant .inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: center;
+  }
+  @media (max-width: 760px) { .invariant .inner { grid-template-columns: 1fr; } }
+  .invariant h2 { text-align: left; }
+  .invariant .badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(126, 231, 135, .1);
+    color: #7ee787;
+    border: 1px solid rgba(126, 231, 135, .25);
+    font-size: .8rem; font-weight: 600;
+    padding: 5px 14px; border-radius: 999px;
+    margin-bottom: 18px;
+  }
+  .invariant p { color: var(--muted); margin-top: 12px; }
+  .invariant p strong { color: var(--text); }
+  .invariant code {
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+    font-size: .85em;
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 2px 7px;
+    border-radius: 6px;
+    color: var(--accent);
+    overflow-wrap: anywhere;
+  }
+  .terminal {
+    background: #0a0d13;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0,0,0,.4);
+  }
+  .terminal .bar {
+    display: flex; gap: 7px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .terminal .bar i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+  .terminal .bar i:nth-child(1) { background: #ff5f57; }
+  .terminal .bar i:nth-child(2) { background: #febc2e; }
+  .terminal .bar i:nth-child(3) { background: #28c840; }
+  .terminal pre {
+    padding: 20px;
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+    font-size: .82rem;
+    line-height: 1.7;
+    color: #c9d4e8;
+    overflow-x: auto;
+  }
+  .terminal .c { color: #5b667e; }
+  .terminal .ok { color: #7ee787; }
+
+  /* Install steps */
+  .steps {
+    margin-top: 48px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+    counter-reset: step;
+  }
+  .step {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 26px;
+    position: relative;
+  }
+  .step::before {
+    counter-increment: step;
+    content: counter(step);
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #1a1205;
+    font-weight: 700; font-size: .9rem;
+    margin-bottom: 14px;
+  }
+  .step h3 { font-size: 1rem; font-weight: 650; margin-bottom: 6px; }
+  .step p { color: var(--muted); font-size: .9rem; }
+  .step code {
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+    font-size: .8em;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    padding: 2px 6px;
+    border-radius: 6px;
+    overflow-wrap: anywhere;
+  }
+  .gatekeeper-note {
+    margin: 28px auto 0;
+    max-width: 720px;
+    font-size: .85rem;
+    color: var(--muted);
+    text-align: center;
+  }
+  .gatekeeper-note code {
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+    font-size: .85em;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    padding: 2px 6px;
+    border-radius: 6px;
+    overflow-wrap: anywhere;
+  }
+
+  /* Final CTA */
+  .final {
+    text-align: center;
+    padding: 88px 0;
+  }
+  .final img { width: 96px; height: 96px; margin-bottom: 22px; filter: drop-shadow(0 12px 28px rgba(0,0,0,.5)); }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 0;
+    text-align: center;
+    color: var(--muted);
+    font-size: .88rem;
+  }
+  footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav>
+    <a class="brand" href="#"><img src="icon.png" alt=""> Poly Shelf</a>
+    <div class="links">
+      <a href="#features">Features</a>
+      <a href="#readonly">Read-only</a>
+      <a href="#install">Install</a>
+      <a href="https://github.com/MahdiMajidzadeh/poly-shelf">GitHub</a>
+    </div>
+  </nav>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <img class="appicon" src="icon.png" alt="Poly Shelf app icon">
+    <h1>Your 3D model library,<br><span class="accent">organized in place.</span></h1>
+    <p class="sub">
+      A native macOS app that indexes, previews, tags, and searches your existing
+      folders of 3D model files — <strong>without ever moving, renaming, or
+      modifying a file on disk.</strong>
+    </p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="https://github.com/MahdiMajidzadeh/poly-shelf/releases">⬇ Download for macOS</a>
+      <a class="btn btn-secondary" href="https://github.com/MahdiMajidzadeh/poly-shelf">View on GitHub</a>
+    </div>
+    <p class="req">Free &amp; open source · Requires macOS 14 (Sonoma) or later</p>
+    <div class="formats">
+      <span>STL</span><span>3MF</span><span>OBJ</span><span>STEP</span><span>GCODE</span><span>BLEND</span><span>+ more</span>
+    </div>
+  </div>
+</header>
+
+<section id="features">
+  <div class="wrap">
+    <h2>One calm shelf for every model you own</h2>
+    <p class="lede">
+      If you 3D print, your models are scattered across downloads, project folders,
+      and external drives. Poly Shelf lets you browse them all — while leaving
+      every original file exactly where it is.
+    </p>
+    <div class="grid">
+      <div class="card">
+        <div class="icon">🖼️</div>
+        <h3>Rich previews</h3>
+        <p>Thumbnails rendered straight from geometry with SceneKit, plus embedded previews, GCODE &amp; Blender extraction, and QuickLook fallback.</p>
+      </div>
+      <div class="card">
+        <div class="icon">⚡</div>
+        <h3>Fast search</h3>
+        <p>Full-text search across file names, tags, and metadata — powered by SQLite FTS5, so results are instant even in large libraries.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🏷️</div>
+        <h3>Tagging, manual and AI</h3>
+        <p>Auto-tag by format and folder, tag by hand, or generate tags with any OpenAI-compatible endpoint you point it at.</p>
+      </div>
+      <div class="card">
+        <div class="icon">👁️</div>
+        <h3>Live folder watching</h3>
+        <p>FSEvents keeps your library in sync as files are added, changed, or renamed — no manual rescans needed.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🧬</div>
+        <h3>Find duplicates</h3>
+        <p>Content-hash comparison finds identical models stored in different places, so you can finally see what you actually have.</p>
+      </div>
+      <div class="card">
+        <div class="icon">📦</div>
+        <h3>Import / export metadata</h3>
+        <p>Your tags and metadata travel with you — export and re-import them at any time, without touching the source files.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="invariant" id="readonly">
+  <div class="wrap inner">
+    <div>
+      <span class="badge">● Read-only by design</span>
+      <h2>Your files are never at risk</h2>
+      <p>
+        Poly Shelf opens your folders with the macOS sandbox entitlement
+        <code>com.apple.security.files.user-selected.read-only</code> — so writes
+        to your model folders <strong>fail at the operating system level</strong>,
+        not just by convention.
+      </p>
+      <p>
+        Any code path that obtains a writable handle to a file inside a watched
+        folder is treated as a bug, and every build can be verified with a
+        snapshot-and-diff script against a real test corpus.
+      </p>
+    </div>
+    <div class="terminal" aria-hidden="true">
+      <div class="bar"><i></i><i></i><i></i></div>
+      <pre>$ scripts/verify-nondestructive.sh snapshot ~/models
+<span class="c"># … exercise the app fully …</span>
+$ scripts/verify-nondestructive.sh verify ~/models
+<span class="ok">✔ 4,812 files checked — nothing moved,
+  nothing renamed, nothing modified.</span></pre>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <h2>Up and running in a minute</h2>
+    <div class="steps">
+      <div class="step">
+        <h3>Download</h3>
+        <p>Grab <code>PolyShelf-vX.Y.Z.zip</code> from the latest <a href="https://github.com/MahdiMajidzadeh/poly-shelf/releases">release</a>.</p>
+      </div>
+      <div class="step">
+        <h3>Install</h3>
+        <p>Unzip and drag <strong>Poly Shelf.app</strong> into your <code>/Applications</code> folder.</p>
+      </div>
+      <div class="step">
+        <h3>First launch</h3>
+        <p>The app is ad-hoc signed, so Gatekeeper will warn once. <strong>Right-click&nbsp;→&nbsp;Open</strong>, confirm, and you're in.</p>
+      </div>
+    </div>
+    <p class="gatekeeper-note">
+      If macOS still blocks it, clear the quarantine flag:
+      <code>xattr -dr com.apple.quarantine "/Applications/Poly Shelf.app"</code>
+    </p>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <img src="icon.png" alt="">
+    <h2>Stop hunting through folders.</h2>
+    <p class="lede">Point Poly Shelf at your model folders and get a searchable, tagged, previewed library — with zero risk to your files.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="https://github.com/MahdiMajidzadeh/poly-shelf/releases">⬇ Download for macOS</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Poly Shelf — free &amp; open source, made for 3D printing folks.</span>
+    <span><a href="https://github.com/MahdiMajidzadeh/poly-shelf">GitHub</a> · <a href="https://github.com/MahdiMajidzadeh/poly-shelf/releases">Releases</a> · <a href="https://github.com/MahdiMajidzadeh/poly-shelf/issues">Issues</a></span>
+  </div>
+</footer>
+
+</body>
+</html>
