@@ -7,7 +7,7 @@
 <meta name="description" content="A native macOS app that indexes, previews, tags, and searches your existing folders of 3D model files — STL, 3MF, OBJ, STEP, GCODE and more — without ever moving, renaming, or modifying a file on disk.">
 <meta property="og:title" content="Poly Shelf — Your 3D model library, organized in place">
 <meta property="og:description" content="Index, preview, tag, and search your 3D model files on macOS — read-only by design. Your files never move.">
-<meta property="og:image" content="icon.png">
+<meta property="og:image" content="screenshot-library.png">
 <link rel="icon" type="image/png" href="icon.png">
 <style>
   :root {
@@ -116,6 +116,39 @@
     border: 1px solid var(--border);
     padding: 5px 12px;
     border-radius: 999px;
+  }
+
+  /* App screenshots */
+  .shot {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    box-shadow: 0 30px 80px rgba(0,0,0,.55);
+  }
+  .hero .shot-wrap {
+    max-width: 960px;
+    margin: 64px auto 0;
+    position: relative;
+  }
+  .hero .shot-wrap::before {
+    content: "";
+    position: absolute;
+    inset: -40px -60px auto;
+    height: 300px;
+    background: radial-gradient(closest-side, rgba(89,194,255,.12), transparent);
+    z-index: -1;
+  }
+  .shot-caption {
+    margin-top: 16px;
+    text-align: center;
+    font-size: .85rem;
+    color: var(--muted);
+  }
+  .features-shot {
+    max-width: 960px;
+    margin: 56px auto 0;
   }
 
   /* Sections */
@@ -320,6 +353,11 @@
     <div class="formats">
       <span>STL</span><span>3MF</span><span>OBJ</span><span>STEP</span><span>GCODE</span><span>BLEND</span><span>+ more</span>
     </div>
+    <div class="shot-wrap">
+      <img class="shot" src="screenshot-inspector.png" width="1600" height="1106"
+           alt="Poly Shelf on macOS: library grid of 3D model thumbnails with the detail inspector showing preview, dimensions, triangle count, and tags">
+      <p class="shot-caption">The library grid with the detail inspector — dimensions, triangles, tags, and file info at a glance.</p>
+    </div>
   </div>
 </header>
 
@@ -362,6 +400,11 @@
         <h3>Import / export metadata</h3>
         <p>Your tags and metadata travel with you — export and re-import them at any time, without touching the source files.</p>
       </div>
+    </div>
+    <div class="features-shot">
+      <img class="shot" src="screenshot-library.png" width="1600" height="1106" loading="lazy"
+           alt="Poly Shelf library of 1,641 models with geometry-rendered thumbnails, tag sidebar with counts, and filter bar for tags, format, and date added">
+      <p class="shot-caption">1,641 models, one shelf — geometry-rendered thumbnails, tag counts, and filters for tags, format, and date added.</p>
     </div>
   </div>
 </section>
