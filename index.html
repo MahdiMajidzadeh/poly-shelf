@@ -94,7 +94,7 @@
   }
   .hero-shot { padding: 24px 0 0; }
 
-  /* Fact list */
+  /* Feature grid */
   .facts { padding: 140px 0 60px; }
   .facts h2, .know h2 {
     font-size: .84rem;
@@ -102,20 +102,35 @@
     text-transform: uppercase;
     letter-spacing: .12em;
     color: var(--faint);
-    margin-bottom: 12px;
+    margin-bottom: 56px;
   }
-  .facts dl { border-top: 1px solid var(--rule); }
-  .facts .row {
+  .facts .grid {
     display: grid;
-    grid-template-columns: 220px 1fr;
-    gap: 24px;
-    padding: 26px 0;
-    border-bottom: 1px solid var(--rule);
+    grid-template-columns: repeat(3, 1fr);
+    column-gap: 56px;
+    row-gap: 64px;
   }
-  @media (max-width: 620px) { .facts .row { grid-template-columns: 1fr; gap: 6px; padding: 22px 0; } }
-  .facts dt { font-weight: 600; font-size: 1rem; }
-  .facts dd { color: var(--muted); font-size: .97rem; }
-  .facts dd code { font-family: var(--mono); font-size: .82em; background: var(--code-bg); padding: 2px 6px; border-radius: 5px; }
+  @media (max-width: 900px) { .facts .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 560px) { .facts .grid { grid-template-columns: 1fr; row-gap: 44px; } }
+  .facts .f svg {
+    width: 24px; height: 24px;
+    stroke: var(--text);
+    stroke-width: 1.5;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .facts .f h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 16px 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .facts .f p {
+    color: var(--muted);
+    font-size: .92rem;
+    line-height: 1.55;
+  }
 
   /* Second shot */
   .know { padding: 100px 0 0; }
@@ -185,34 +200,40 @@
 </div>
 
 <section class="facts">
-  <div class="col">
-    <h2>What it does instead</h2>
-    <dl>
-      <div class="row">
-        <dt>Previews from geometry</dt>
-        <dd>Thumbnails are rendered from the actual mesh with SceneKit — with embedded previews, GCODE and <code>.blend</code> extraction, and QuickLook as fallbacks.</dd>
+  <div class="wide">
+    <h2>What it does</h2>
+    <div class="grid">
+      <div class="f">
+        <svg viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>
+        <h3>Previews from geometry</h3>
+        <p>Thumbnails rendered from the mesh itself — not the filename.</p>
       </div>
-      <div class="row">
-        <dt>Search that keeps up</dt>
-        <dd>Full-text search over names, tags, and notes, backed by SQLite FTS5. Instant at thousands of files.</dd>
+      <div class="f">
+        <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21"/></svg>
+        <h3>Instant search</h3>
+        <p>Full-text across names, tags, and notes. Fast at thousands of files.</p>
       </div>
-      <div class="row">
-        <dt>Tags — yours or the machine’s</dt>
-        <dd>Auto-tag by format and folder, tag by hand, or let any OpenAI-compatible endpoint suggest them.</dd>
+      <div class="f">
+        <svg viewBox="0 0 24 24"><path d="M3 11V4h7l11 11-7 7L3 11z"/><circle cx="7.5" cy="8.5" r="1.2"/></svg>
+        <h3>Tags, auto or AI</h3>
+        <p>By format, by folder, by hand — or from any OpenAI-compatible endpoint.</p>
       </div>
-      <div class="row">
-        <dt>Always in sync</dt>
-        <dd>FSEvents watches your folders live. Add, rename, or move a file in Finder and the shelf follows.</dd>
+      <div class="f">
+        <svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 13.6-5.6L20 8.5"/><path d="M20 4v4.5h-4.5"/><path d="M20 12a8 8 0 0 1-13.6 5.6L4 15.5"/><path d="M4 20v-4.5h4.5"/></svg>
+        <h3>Always in sync</h3>
+        <p>Folders are watched live. Rename a file in Finder; the shelf follows.</p>
       </div>
-      <div class="row">
-        <dt>Duplicates, found</dt>
-        <dd>Content hashing spots the same model stored in three different places — across folders and drives.</dd>
+      <div class="f">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="13" height="13" rx="2"/><path d="M8 21h11a2 2 0 0 0 2-2V8"/></svg>
+        <h3>Duplicates, found</h3>
+        <p>Content hashing spots the same model across folders and drives.</p>
       </div>
-      <div class="row">
-        <dt>Metadata that travels</dt>
-        <dd>Export your tags and notes, re-import them anywhere. The source files are never touched.</dd>
+      <div class="f">
+        <svg viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M7.5 7.5L12 3l4.5 4.5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
+        <h3>Metadata that travels</h3>
+        <p>Export tags and notes, re-import anywhere. Sources untouched.</p>
       </div>
-    </dl>
+    </div>
   </div>
 </section>
 
